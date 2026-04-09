@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+{% block title %}{{ novel.title }}{% endblock %}
+{% block content %}
+
+<div class="novel-hero">
+  <div class="container">
+    <div class="novel-hero-inner">
+      {% if novel.cover_url %}
+      <div class="novel-hero-cover"><img src="{{ novel.cover_url }}" alt="{{ novel.title }}"></div>
+      {% else %}
+      <div class="novel-hero-cover-placeholder">📖<span style="font-size:0.75rem">{{ novel.genre or 'Novel' }}</span></div>
+      {% endif %}
+      <div class="novel-hero-body">
+        <div class="novel-hero-meta">
+          {% if novel.genre %}<span class="badge badge-genre">{{ novel.genre }}</span>{% endif %}
+          <span class="badge badge-{{ novel.status }}">{{ novel.status|capitalize }}</span>
+        </div>
+        <h1 class="novel-hero-title">{{ novel.title }}</h1>
+        <div class="novel-hero-author">by <a href="{{ url_for('user_profile', username=novel.author_name) }}" style="color:var(--gold)">{{ novel.author_name }}</a></div>
+        {% if novel.avg_rating %}
+        <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem">
+          <div class="stars">
+            {% for i in range(1,6) %}
+            <span class="star {% if i <= (novel.avg_rating|round|int) %}filled{% endif %}">★</span>
+            {% endfor %}
+          </div>
+          <span class="rating-score">{{ "%.2f"|format(novel.avg_rating) }}</span>
+          <span style="color:var(--text3);font-size:0.85rem">({{ novel.rating_count }} ratings)</span>
+        </div>
+        {% endif %}
+        <p class="novel-hero-desc">{{ novel.description }}</p>
+        {% if tags %}
+        <div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:1rem">
+          {% for tag in tags %}<span class="badge badge-tag">{{ tag }}</span>{% endfor %}
+        </div>
+        {% endif %}
+        <div class="novel-hero-actions">
+          {% if chapters %}
+          <a class="btn btn-primary" href="{{ url_for('read_chapter', novel_id=novel.id, chapter_id=chapters[0].id) }}">▶ Start Reading</a>
+          {% endif %}
+          {% if session.user_id %}
+          <button class="btn btn-secondary btn-follow {% if is_following %}following{% endif %}"
+            data-novel-id="{{ novel.id }}" data-followers="{{ novel.id }}">
+            {% if is_following %}✓ Following{% else %}+ Follow{% endif %}
+          </button>
+          {% if novel.author_id == session.user_id %}
+          <a class="btn btn-ghost btn-sm" href="{{ url_for('manage_novel', novel_id=novel.id) }}">⚙ Manage</a>
+          {% endif %}
+          {% endif %}
+        </div>
+        <div class="novel-stats-row">
+          <div class="novel-stat"><div class="novel-stat-val">{{ "{:,}".format(novel.view_count or 0) }}</div><div class="novel-stat-label">Views</div></div>
+          <div class="novel-stat"><div class="novel-stat-val" data-followers="{{ novel.id }}">{{ "{:,}".format(novel.follower_count or 0) }}</div><div class="novel-stat-label">Followers</div></div>
+          <div class="novel-stat"><div class="novel-stat-val">{{ chapters|length }}</div><div class="novel-stat-label">Chapters</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container" style="padding-top:2rem">
+  <div class="layout-with-sidebar">
+    <div>
+      <!-- Tabs -->
+      <div class="tabs">
+        <a class="tab active" data-tab="tab-chapters">Chapters ({{ chapters|length }})</a>
+        <a class="tab" data-tab="tab-reviews">Reviews ({{ reviews|length }})</a>
+        <a class="tab" data-tab="tab-comments">Discussion</a>
+      </div>
+
+      <!-- Chapters -->
+      <div id="tab-chapters">
+        {% if chapters %}
+        <ul class="chapter-list">
+          {% for ch in chapters %}
+          <li class="chapter-item">
+            <span class="chapter-num">{{ ch.chapter_number }}</span>
+            <a class="chapter-title" href="{{ url_for('read_chapter', novel_id=novel.id, chapter_id=ch.id) }}">{{ ch.title }}</a>
+            <span class="chapter-meta">{{ ch.updated_at|time_ago }}</span>
+            <span class="chapter-views">👁 {{ "{:,}".format(ch.views or 0) }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <div class="empty-state"><div class="empty-state-icon">📄</div><div class="empty-state-title">No chapters yet</div></div>
+        {% endif %}
+      </div>
+
+      <!-- Reviews -->
+      <div id="tab-reviews" style="display:none">
+        {% if session.user_id and not user_review %}
+        <div class="card" style="margin-bottom:1.5rem">
+          <div class="card-body">
+            <h3 style="margin-bottom:1rem">Leave a Review</h3>
+            <form id="review-form" data-novel-id="{{ novel.id }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+              <div class="form-group">
+                <label class="form-label">Rating</label>
+                <div class="star-rating stars" style="font-size:1.5rem">
+                  {% for i in range(1,6) %}<span class="star" data-val="{{ i }}">★</span>{% endfor %}
+                </div>
+                <input type="hidden" name="rating" value="0">
+              </div>
+              <div class="form-group">
+                <textarea class="form-control" name="body" placeholder="Share your thoughts (optional)…" rows="4"></textarea>
+              </div>
+              <button type="submit" class="btn btn-primary">Submit Review</button>
+            </form>
+          </div>
+        </div>
+        {% elif user_review %}
+        <div style="background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.2);border-radius:var(--radius-lg);padding:0.85rem 1rem;margin-bottom:1.5rem;font-size:0.9rem;color:var(--gold)">
+          ✓ You've reviewed this novel — {{ user_review.rating }}/5 stars
+        </div>
+        {% endif %}
+        {% if reviews %}
+        <div style="display:flex;flex-direction:column;gap:1rem">
+          {% for r in reviews %}
+          <div class="review">
+            <div class="review-header">
+              <div>
+                <div class="review-rating">{% for i in range(1,6) %}<span class="star {% if i<=r.rating %}filled{% endif %}" style="cursor:default">★</span>{% endfor %}</div>
+                <div class="review-author"><a href="{{ url_for('user_profile', username=r.username) }}" style="color:var(--gold)">{{ r.username }}</a> · {{ r.created_at|time_ago }}</div>
+              </div>
+            </div>
+            {% if r.body %}<div class="review-body">{{ r.body }}</div>{% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state"><div class="empty-state-icon">⭐</div><div class="empty-state-title">No reviews yet</div><p>Be the first to review!</p></div>
+        {% endif %}
+      </div>
+
+      <!-- Comments -->
+      <div id="tab-comments" style="display:none">
+        <div class="comments-section">
+          {% if session.user_id %}
+          <div class="comment-form-area">
+            <form class="comment-form" data-novel-id="{{ novel.id }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+              <div class="form-group">
+                <textarea class="form-control" placeholder="Share your thoughts about this novel…" rows="3"></textarea>
+              </div>
+              <button type="submit" class="btn btn-primary btn-sm">Post Comment</button>
+            </form>
+          </div>
+          {% else %}
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem;text-align:center;margin-bottom:1rem;color:var(--text3)">
+            <a href="{{ url_for('login') }}" style="color:var(--gold)">Log in</a> to join the discussion
+          </div>
+          {% endif %}
+          <div class="comment-list">
+            {% for c in comments %}
+            <div class="comment" id="comment-{{ c.id }}">
+              <div class="comment-header">
+                <div class="comment-avatar">{{ c.username[0].upper() }}</div>
+                <a class="comment-username" href="{{ url_for('user_profile', username=c.username) }}">{{ c.username }}</a>
+                <span class="comment-time">{{ c.created_at|time_ago }}</span>
+              </div>
+              <div class="comment-body">{{ c.body }}</div>
+              <div class="comment-actions">
+                {% if session.user_id %}
+                <button class="comment-like-btn" data-comment-id="{{ c.id }}">♥ <span class="like-count">0</span></button>
+                {% endif %}
+              </div>
+            </div>
+            {% else %}
+            <div class="empty-state"><div class="empty-state-icon">💬</div><div class="empty-state-title">No comments yet</div></div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-card">
+        <div class="sidebar-card-header">About the Author</div>
+        <div class="sidebar-card-body">
+          <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem">
+            <div class="comment-avatar" style="width:44px;height:44px;font-size:1.1rem">{{ novel.author_name[0].upper() }}</div>
+            <a href="{{ url_for('user_profile', username=novel.author_name) }}" style="font-weight:600;color:var(--text)">{{ novel.author_name }}</a>
+          </div>
+          <a class="btn btn-secondary btn-sm" href="{{ url_for('user_profile', username=novel.author_name) }}" style="width:100%;justify-content:center">View Profile</a>
+        </div>
+      </div>
+      <div class="sidebar-card">
+        <div class="sidebar-card-header">Novel Info</div>
+        <div class="sidebar-card-body" style="display:flex;flex-direction:column;gap:0.6rem;font-size:0.88rem">
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Genre</span><span>{{ novel.genre or '—' }}</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Status</span><span class="badge badge-{{ novel.status }}">{{ novel.status|capitalize }}</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Chapters</span><span>{{ chapters|length }}</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Published</span><span>{{ novel.created_at|time_ago }}</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Updated</span><span>{{ novel.updated_at|time_ago }}</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

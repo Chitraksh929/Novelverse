@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}404 — Page Not Found{% endblock %}
+{% block content %}
+<div style="min-height:70vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:2rem">
+  <div>
+    <div style="font-family:var(--font-head);font-size:6rem;font-weight:700;color:var(--border2);line-height:1">404</div>
+    <h2 style="margin-bottom:0.5rem">Page Not Found</h2>
+    <p style="color:var(--text3);margin-bottom:2rem">The chapter you're looking for doesn't exist or has been removed.</p>
+    <a class="btn btn-primary" href="{{ url_for('home') }}">Back to Home</a>
+  </div>
+</div>
+{% endblock %}

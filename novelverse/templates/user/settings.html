@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Settings{% endblock %}
+{% block content %}
+<div class="container-sm" style="padding-top:2rem;padding-bottom:3rem">
+  <h1 style="margin-bottom:2rem">Account Settings</h1>
+  <div class="card">
+    <div class="card-body">
+      <form method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <div class="form-group">
+          <label class="form-label">Username</label>
+          <input type="text" class="form-control" value="{{ user.username }}" disabled style="opacity:0.5;cursor:not-allowed">
+          <div class="form-hint">Username cannot be changed.</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" class="form-control" value="{{ user.email }}" disabled style="opacity:0.5;cursor:not-allowed">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Bio</label>
+          <textarea name="bio" class="form-control" rows="3" placeholder="Tell readers about yourself…">{{ user.bio or '' }}</textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Avatar URL</label>
+          <input type="url" name="avatar_url" class="form-control" placeholder="https://…" value="{{ user.avatar_url or '' }}">
+          <div class="form-hint">Link to an image for your profile picture.</div>
+        </div>
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+      </form>
+    </div>
+  </div>
+
+  {% if not session.is_author %}
+  <div class="card" style="margin-top:1.5rem;border-color:rgba(201,168,76,0.3)">
+    <div class="card-body" style="text-align:center;padding:2rem">
+      <div style="font-size:2.5rem;margin-bottom:0.75rem">✍</div>
+      <h3 style="margin-bottom:0.5rem">Become an Author</h3>
+      <p style="color:var(--text3);margin-bottom:1.25rem">Start publishing your own novels and stories on NovelVerse.</p>
+      <form method="post" action="{{ url_for('become_author') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button type="submit" class="btn btn-primary">Enable Author Mode</button>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

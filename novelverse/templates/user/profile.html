@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}{{ profile.username }}{% endblock %}
+{% block content %}
+<div class="profile-header">
+  <div class="container">
+    <div style="display:flex;align-items:flex-start;gap:1.5rem;flex-wrap:wrap">
+      <div class="profile-avatar-lg">{{ profile.username[0].upper() }}</div>
+      <div style="flex:1">
+        <h1 style="margin-bottom:0.25rem">{{ profile.username }}</h1>
+        {% if profile.is_author %}<span class="badge badge-genre" style="margin-bottom:0.5rem">✍ Author</span>{% endif %}
+        {% if profile.bio %}<p class="profile-bio">{{ profile.bio }}</p>{% endif %}
+        <div style="font-size:0.82rem;color:var(--text3);margin-top:0.5rem">Joined {{ profile.created_at|time_ago }}</div>
+      </div>
+      {% if is_self %}
+      <a class="btn btn-secondary btn-sm" href="{{ url_for('settings') }}">⚙ Edit Profile</a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="container" style="padding-top:2rem">
+  <div class="tabs">
+    <a class="tab active" data-tab="tab-novels">Novels ({{ novels|length }})</a>
+    <a class="tab" data-tab="tab-following">Following ({{ following|length }})</a>
+  </div>
+
+  <div id="tab-novels">
+    {% if novels %}
+    <div class="novel-grid">
+      {% for novel in novels %}
+      <a href="{{ url_for('novel_detail', novel_id=novel.id) }}" class="novel-card" style="text-decoration:none">
+        {% if novel.cover_url %}
+        <div class="novel-cover"><img src="{{ novel.cover_url }}" alt="{{ novel.title }}"></div>
+        {% else %}
+        <div class="novel-cover-placeholder">📖<span>{{ novel.genre or '' }}</span></div>
+        {% endif %}
+        <div class="novel-card-body">
+          <div class="novel-card-badges">
+            {% if novel.genre %}<span class="badge badge-genre">{{ novel.genre }}</span>{% endif %}
+            <span class="badge badge-{{ novel.status }}">{{ novel.status|capitalize }}</span>
+          </div>
+          <div class="novel-card-title">{{ novel.title }}</div>
+          <div class="novel-card-meta">
+            <span>{{ novel.chapter_count or 0 }} ch.</span>
+            <span>👁 {{ "{:,}".format(novel.view_count or 0) }}</span>
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state"><div class="empty-state-icon">📚</div><div class="empty-state-title">No published novels</div></div>
+    {% endif %}
+  </div>
+
+  <div id="tab-following" style="display:none">
+    {% if following %}
+    <div class="novel-list">
+      {% for novel in following %}
+      <div class="novel-list-card">
+        {% if novel.cover_url %}
+        <div class="novel-list-cover"><img src="{{ novel.cover_url }}" alt="{{ novel.title }}"></div>
+        {% else %}
+        <div class="novel-list-cover-placeholder">📖</div>
+        {% endif %}
+        <div class="novel-list-body">
+          <a class="novel-list-title" href="{{ url_for('novel_detail', novel_id=novel.id) }}">{{ novel.title }}</a>
+          <div class="novel-list-author">by {{ novel.author_name }}</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state"><div class="empty-state-icon">🔖</div><div class="empty-state-title">Not following any novels</div></div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

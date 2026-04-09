@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}{{ chapter.title }}{% endblock %}
+{% block content %}
+<div id="reading-progress-bar" class="reading-progress-bar"></div>
+
+<div class="reading-container container" style="padding-top:2rem;padding-bottom:2rem">
+  <!-- Breadcrumb -->
+  <div style="font-size:0.82rem;color:var(--text3);margin-bottom:1.5rem">
+    <a href="{{ url_for('home') }}" style="color:var(--text3)">Home</a> /
+    <a href="{{ url_for('novel_detail', novel_id=novel_id) }}" style="color:var(--gold)">{{ chapter.novel_title }}</a> /
+    Chapter {{ chapter.chapter_number }}
+  </div>
+
+  <div class="reading-header">
+    <div style="color:var(--text3);font-size:0.85rem;margin-bottom:0.5rem">Chapter {{ chapter.chapter_number }}</div>
+    <h1 class="reading-title">{{ chapter.title }}</h1>
+    <div class="reading-subtitle">{{ chapter.views }} views · {{ chapter.content|word_count }} words · {{ chapter.updated_at|time_ago }}</div>
+  </div>
+
+  {% if chapter.author_note %}
+  <div class="author-note"><strong>Author's Note:</strong> {{ chapter.author_note }}</div>
+  {% endif %}
+
+  <article class="reading-body">
+    {% for para in chapter.content.split('\n\n') %}
+    {% if para.strip() %}<p>{{ para }}</p>{% endif %}
+    {% endfor %}
+  </article>
+
+  <!-- Navigation -->
+  <div class="reading-nav">
+    {% if prev_ch %}
+    <a class="btn btn-secondary" href="{{ url_for('read_chapter', novel_id=novel_id, chapter_id=prev_ch.id) }}">‹ Previous</a>
+    {% else %}<span></span>{% endif %}
+    <a class="btn btn-ghost btn-sm" href="{{ url_for('novel_detail', novel_id=novel_id) }}">📚 Novel Page</a>
+    {% if next_ch %}
+    <a class="btn btn-primary" href="{{ url_for('read_chapter', novel_id=novel_id, chapter_id=next_ch.id) }}">Next ›</a>
+    {% else %}
+    <span style="color:var(--text3);font-size:0.9rem">End of available chapters</span>
+    {% endif %}
+  </div>
+
+  <!-- Comments -->
+  <div class="comments-section" style="margin-top:3rem;padding-top:2rem;border-top:1px solid var(--border)">
+    <h3 style="margin-bottom:1.25rem">Chapter Comments</h3>
+    {% if session.user_id %}
+    <div class="comment-form-area">
+      <form class="comment-form" data-novel-id="{{ novel_id }}" data-chapter-id="{{ chapter.id }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <div class="form-group">
+          <textarea class="form-control" placeholder="What did you think of this chapter?" rows="3"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary btn-sm">Post Comment</button>
+      </form>
+    </div>
+    {% else %}
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem;text-align:center;margin-bottom:1rem;color:var(--text3)">
+      <a href="{{ url_for('login') }}" style="color:var(--gold)">Log in</a> to comment
+    </div>
+    {% endif %}
+    <div class="comment-list">
+      {% for c in comments %}
+      <div class="comment" id="comment-{{ c.id }}">
+        <div class="comment-header">
+          <div class="comment-avatar">{{ c.username[0].upper() }}</div>
+          <a class="comment-username" href="{{ url_for('user_profile', username=c.username) }}">{{ c.username }}</a>
+          <span class="comment-time">{{ c.created_at|time_ago }}</span>
+        </div>
+        <div class="comment-body">{{ c.body }}</div>
+        <div class="comment-actions">
+          {% if session.user_id %}
+          <button class="comment-like-btn" data-comment-id="{{ c.id }}">♥ <span class="like-count">0</span></button>
+          {% endif %}
+        </div>
+      </div>
+      {% else %}
+      <div class="empty-state"><div class="empty-state-icon">💬</div><div class="empty-state-title">No comments yet</div></div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- Toolbar -->
+<div class="chapter-toolbar">
+  {% if prev_ch %}<a class="btn btn-ghost btn-sm" href="{{ url_for('read_chapter', novel_id=novel_id, chapter_id=prev_ch.id) }}">‹ Prev</a>{% endif %}
+  <div class="font-size-control">
+    <button id="font-dec" class="btn btn-ghost btn-sm">A−</button>
+    <span style="font-size:0.8rem;color:var(--text3)">Font</span>
+    <button id="font-inc" class="btn btn-ghost btn-sm">A+</button>
+  </div>
+  {% if next_ch %}<a class="btn btn-primary btn-sm" href="{{ url_for('read_chapter', novel_id=novel_id, chapter_id=next_ch.id) }}">Next ›</a>{% endif %}
+</div>
+{% endblock %}

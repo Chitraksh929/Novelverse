@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+{% block content %}
+
+<!-- ── Hero ── -->
+<section class="hero">
+  <div class="container">
+    <div style="max-width:600px">
+      <h1 class="hero-title">Discover <em>extraordinary</em> stories written by passionate authors</h1>
+      <p class="hero-sub">Thousands of free web novels across every genre. Follow stories as they unfold, chapter by chapter.</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary btn-lg" href="{{ url_for('browse') }}">Browse Stories</a>
+        {% if not session.user_id %}
+        <a class="btn btn-outline btn-lg" href="{{ url_for('register') }}">Start Writing</a>
+        {% else %}
+        <a class="btn btn-outline btn-lg" href="{{ url_for('create_novel') }}">Write a Novel</a>
+        {% endif %}
+      </div>
+      {% if stats %}
+      <div class="hero-stats">
+        <div><div class="hero-stat-num">{{ "{:,}".format(stats.users or 0) }}</div><div class="hero-stat-label">Readers</div></div>
+        <div><div class="hero-stat-num">{{ "{:,}".format(stats.novels or 0) }}</div><div class="hero-stat-label">Novels</div></div>
+        <div><div class="hero-stat-num">{{ "{:,}".format(stats.chapters or 0) }}</div><div class="hero-stat-label">Chapters</div></div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<div class="container">
+
+  <!-- ── Genre chips ── -->
+  {% if genres %}
+  <div style="display:flex;flex-wrap:wrap;gap:0.5rem;padding:1.5rem 0 0">
+    {% for g in genres %}
+    <a class="filter-chip" href="{{ url_for('browse', genre=g) }}">{{ g }}</a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- ── Trending ── -->
+  <section class="section">
+    <div class="section-header">
+      <h2 class="section-title">Trending</h2>
+      <a class="section-link" href="{{ url_for('browse', sort='views') }}">View all →</a>
+    </div>
+    {% if trending %}
+    <div class="novel-grid">
+      {% for novel in trending %}
+      <a href="{{ url_for('novel_detail', novel_id=novel.id) }}" class="novel-card" style="text-decoration:none">
+        {% if novel.cover_url %}
+        <div class="novel-cover"><img src="{{ novel.cover_url }}" alt="{{ novel.title }}" loading="lazy"></div>
+        {% else %}
+        <div class="novel-cover-placeholder">📖<span>{{ novel.genre or 'Novel' }}</span></div>
+        {% endif %}
+        <div class="novel-card-body">
+          <div class="novel-card-badges">
+            {% if novel.genre %}<span class="badge badge-genre">{{ novel.genre }}</span>{% endif %}
+            <span class="badge badge-{{ novel.status }}">{{ novel.status|capitalize }}</span>
+          </div>
+          <div class="novel-card-title">{{ novel.title }}</div>
+          <div class="novel-card-author">by {{ novel.author_name }}</div>
+          <div class="novel-card-meta">
+            <span>👁 {{ "{:,}".format(novel.view_count or 0) }}</span>
+            {% if novel.avg_rating %}<span>★ {{ "%.1f"|format(novel.avg_rating) }}</span>{% endif %}
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state"><div class="empty-state-icon">📚</div><div class="empty-state-title">No novels yet</div><p>Be the first to publish!</p></div>
+    {% endif %}
+  </section>
+
+  <!-- ── Recommended ── -->
+  {% if recommended %}
+  <section class="section" style="padding-top:0">
+    <div class="section-header">
+      <h2 class="section-title">Recommended for You</h2>
+      <span style="font-size:0.8rem;color:var(--text3);margin-left:0.5rem">based on your reading history</span>
+    </div>
+    <div class="novel-grid">
+      {% for novel in recommended %}
+      <a href="{{ url_for('novel_detail', novel_id=novel.id) }}" class="novel-card" style="text-decoration:none">
+        {% if novel.cover_url %}
+        <div class="novel-cover"><img src="{{ novel.cover_url }}" alt="{{ novel.title }}" loading="lazy"></div>
+        {% else %}
+        <div class="novel-cover-placeholder">📖<span>{{ novel.genre or 'Novel' }}</span></div>
+        {% endif %}
+        <div class="novel-card-body">
+          <div class="novel-card-badges">
+            {% if novel.genre %}<span class="badge badge-genre">{{ novel.genre }}</span>{% endif %}
+          </div>
+          <div class="novel-card-title">{{ novel.title }}</div>
+          <div class="novel-card-author">by {{ novel.author_name }}</div>
+          <div class="novel-card-meta">
+            {% if novel.avg_rating %}<span>★ {{ "%.1f"|format(novel.avg_rating) }}</span>{% endif %}
+            <span>👁 {{ "{:,}".format(novel.view_count or 0) }}</span>
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- ── Latest Updates ── -->
+  <section class="section" style="padding-top:0">
+    <div class="section-header">
+      <h2 class="section-title">Latest Updates</h2>
+      <a class="section-link" href="{{ url_for('browse', sort='updated') }}">View all →</a>
+    </div>
+    {% if latest %}
+    <div class="novel-list">
+      {% for novel in latest %}
+      <div class="novel-list-card">
+        {% if novel.cover_url %}
+        <div class="novel-list-cover"><img src="{{ novel.cover_url }}" alt="{{ novel.title }}"></div>
+        {% else %}
+        <div class="novel-list-cover-placeholder">📖</div>
+        {% endif %}
+        <div class="novel-list-body">
+          <a class="novel-list-title" href="{{ url_for('novel_detail', novel_id=novel.id) }}">{{ novel.title }}</a>
+          <div class="novel-list-author">by <a href="{{ url_for('user_profile', username=novel.author_name) }}" style="color:var(--gold)">{{ novel.author_name }}</a></div>
+          <div class="novel-list-desc">{{ novel.description }}</div>
+          <div class="novel-list-meta">
+            {% if novel.genre %}<span class="badge badge-genre">{{ novel.genre }}</span>{% endif %}
+            <span class="badge badge-{{ novel.status }}">{{ novel.status|capitalize }}</span>
+            {% if novel.avg_rating %}<span>★ {{ "%.1f"|format(novel.avg_rating) }} ({{ novel.rating_count }})</span>{% endif %}
+            <span>Updated {{ novel.updated_at|time_ago }}</span>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}403 — Forbidden{% endblock %}
+{% block content %}
+<div style="min-height:70vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:2rem">
+  <div>
+    <div style="font-family:var(--font-head);font-size:6rem;font-weight:700;color:var(--border2);line-height:1">403</div>
+    <h2 style="margin-bottom:0.5rem">Access Forbidden</h2>
+    <p style="color:var(--text3);margin-bottom:2rem">You don't have permission to view this page.</p>
+    <a class="btn btn-primary" href="{{ url_for('home') }}">Back to Home</a>
+  </div>
+</div>
+{% endblock %}

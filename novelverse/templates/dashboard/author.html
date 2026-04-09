@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Author Dashboard{% endblock %}
+{% block head %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+{% endblock %}
+{% block content %}
+<div class="container" style="padding-top:2rem;padding-bottom:3rem">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2rem;flex-wrap:wrap;gap:1rem">
+    <h1>Author Dashboard</h1>
+    <a class="btn btn-primary" href="{{ url_for('create_novel') }}">+ New Novel</a>
+  </div>
+
+  <!-- Summary Stats -->
+  <div class="analytics-grid">
+    <div class="stat-card">
+      <div class="stat-label">Total Views</div>
+      <div class="stat-value">{{ "{:,}".format(total_views) }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Followers</div>
+      <div class="stat-value">{{ "{:,}".format(total_followers) }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Chapters Written</div>
+      <div class="stat-value">{{ total_chapters }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Novels</div>
+      <div class="stat-value">{{ novels|length }}</div>
+    </div>
+  </div>
+
+  <!-- Novels list -->
+  <h2 style="margin-bottom:1rem">Your Novels</h2>
+  {% if novels %}
+  <div style="display:flex;flex-direction:column;gap:1rem;margin-bottom:3rem">
+    {% for novel in novels %}
+    <div class="card">
+      <div class="card-body" style="display:flex;gap:1.5rem;align-items:flex-start;flex-wrap:wrap">
+        <div style="flex:1;min-width:220px">
+          <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.4rem">
+            <h3 style="font-size:1.1rem">
+              <a href="{{ url_for('novel_detail', novel_id=novel.id) }}" style="color:var(--text)">{{ novel.title }}</a>
+            </h3>
+            <span class="badge badge-{{ novel.status }}">{{ novel.status|capitalize }}</span>
+          </div>
+          <div style="display:flex;gap:1.5rem;font-size:0.82rem;color:var(--text3);flex-wrap:wrap">
+            <span>👁 {{ "{:,}".format(novel.total_views or 0) }} views</span>
+            <span>❤ {{ novel.followers or 0 }} followers</span>
+            <span>📄 {{ novel.chapter_count or 0 }} chapters</span>
+            {% if novel.avg_rating %}<span>★ {{ "%.1f"|format(novel.avg_rating) }}</span>{% endif %}
+          </div>
+        </div>
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+          <a class="btn btn-secondary btn-sm" href="{{ url_for('manage_novel', novel_id=novel.id) }}">⚙ Manage</a>
+          <a class="btn btn-ghost btn-sm" href="{{ url_for('new_chapter', novel_id=novel.id) }}">+ Chapter</a>
+          <a class="btn btn-ghost btn-sm" href="{{ url_for('edit_novel', novel_id=novel.id) }}">✏ Edit</a>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-state-icon">📚</div>
+    <div class="empty-state-title">No novels yet</div>
+    <p>Start your writing journey today!</p>
+    <a class="btn btn-primary" href="{{ url_for('create_novel') }}" style="margin-top:1rem">Create Your First Novel</a>
+  </div>
+  {% endif %}
+
+  <!-- Recent Comments -->
+  {% if recent_comments %}
+  <h2 style="margin-bottom:1rem">Recent Reader Comments</h2>
+  <div style="display:flex;flex-direction:column;gap:0.75rem">
+    {% for c in recent_comments %}
+    <div class="comment" style="display:flex;gap:1rem;align-items:flex-start">
+      <div class="comment-avatar">{{ c.username[0].upper() }}</div>
+      <div style="flex:1">
+        <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.25rem;flex-wrap:wrap">
+          <a href="{{ url_for('user_profile', username=c.username) }}" style="font-weight:600;font-size:0.9rem">{{ c.username }}</a>
+          <span style="font-size:0.78rem;color:var(--text3)">on</span>
+          <a href="{{ url_for('novel_detail', novel_id=c.novel_id) }}" style="color:var(--gold);font-size:0.9rem">{{ c.novel_title }}</a>
+          <span style="font-size:0.78rem;color:var(--text3);margin-left:auto">{{ c.created_at|time_ago }}</span>
+        </div>
+        <div style="font-size:0.9rem;color:var(--text2)">{{ c.body }}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

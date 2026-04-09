@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}My Reading List{% endblock %}
+{% block content %}
+<div class="container" style="padding-top:2rem;padding-bottom:3rem">
+  <h1 style="margin-bottom:1.75rem">📚 My Reading List</h1>
+
+  {% if following %}
+  <div class="novel-list">
+    {% for novel in following %}
+    <div class="novel-list-card">
+      {% if novel.cover_url %}
+      <div class="novel-list-cover"><img src="{{ novel.cover_url }}" alt="{{ novel.title }}"></div>
+      {% else %}
+      <div class="novel-list-cover-placeholder">📖</div>
+      {% endif %}
+      <div class="novel-list-body" style="flex:1">
+        <a class="novel-list-title" href="{{ url_for('novel_detail', novel_id=novel.id) }}">{{ novel.title }}</a>
+        <div class="novel-list-author">by {{ novel.author_name }}</div>
+        <div class="novel-list-meta">
+          <span>{{ novel.chapter_count or 0 }} chapters</span>
+          {% if novel.avg_rating %}<span>★ {{ "%.1f"|format(novel.avg_rating) }}</span>{% endif %}
+          <span>Updated {{ novel.updated_at|time_ago }}</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:0.5rem;align-items:flex-end;flex-shrink:0">
+        {% if novel.last_read_chapter_id %}
+        <a class="btn btn-primary btn-sm" href="{{ url_for('read_chapter', novel_id=novel.id, chapter_id=novel.last_read_chapter_id) }}">Continue Reading</a>
+        {% else %}
+        <a class="btn btn-outline btn-sm" href="{{ url_for('novel_detail', novel_id=novel.id) }}">Start Reading</a>
+        {% endif %}
+        <button class="btn btn-ghost btn-sm btn-follow following" data-novel-id="{{ novel.id }}" style="font-size:0.75rem">✓ Following</button>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-state-icon">🔖</div>
+    <div class="empty-state-title">Your reading list is empty</div>
+    <p>Follow novels to keep track of them here.</p>
+    <a class="btn btn-primary" href="{{ url_for('browse') }}" style="margin-top:1rem">Browse Novels</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

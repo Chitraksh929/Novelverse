@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% block title %}Manage — {{ novel.title }}{% endblock %}
+{% block head %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+{% endblock %}
+{% block content %}
+<div class="container" style="padding-top:2rem;padding-bottom:3rem">
+  <div style="display:flex;align-items:center;gap:1rem;margin-bottom:0.5rem;flex-wrap:wrap">
+    <a href="{{ url_for('author_dashboard') }}" style="color:var(--text3);font-size:0.9rem">‹ Dashboard</a>
+  </div>
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:2rem;flex-wrap:wrap;gap:1rem">
+    <div>
+      <h1>{{ novel.title }}</h1>
+      <span class="badge badge-{{ novel.status }}">{{ novel.status|capitalize }}</span>
+      {% if novel.genre %}<span class="badge badge-genre" style="margin-left:0.3rem">{{ novel.genre }}</span>{% endif %}
+    </div>
+    <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+      <a class="btn btn-primary" href="{{ url_for('new_chapter', novel_id=novel.id) }}">+ New Chapter</a>
+      <a class="btn btn-secondary" href="{{ url_for('edit_novel', novel_id=novel.id) }}">✏ Edit Novel</a>
+      <a class="btn btn-ghost" href="{{ url_for('novel_detail', novel_id=novel.id) }}" target="_blank">👁 View Page</a>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <a class="tab active" data-tab="tab-chapters">Chapters ({{ chapters|length }})</a>
+    <a class="tab" data-tab="tab-analytics">Analytics</a>
+    <a class="tab" data-tab="tab-words">Word Count</a>
+  </div>
+
+  <!-- Chapters Tab -->
+  <div id="tab-chapters">
+    {% if chapters %}
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse">
+        <thead>
+          <tr style="font-size:0.78rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--text3);font-family:var(--font-mono);border-bottom:1px solid var(--border)">
+            <th style="padding:0.6rem 0.5rem;text-align:left">#</th>
+            <th style="padding:0.6rem 0.5rem;text-align:left">Title</th>
+            <th style="padding:0.6rem 0.5rem;text-align:center">Status</th>
+            <th style="padding:0.6rem 0.5rem;text-align:right">Views</th>
+            <th style="padding:0.6rem 0.5rem;text-align:right">Words</th>
+            <th style="padding:0.6rem 0.5rem;text-align:right">Updated</th>
+            <th style="padding:0.6rem 0.5rem;text-align:right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ch in chapters %}
+          <tr style="border-bottom:1px solid var(--border);transition:background 0.15s" onmouseenter="this.style.background='var(--surface)'" onmouseleave="this.style.background=''">
+            <td style="padding:0.7rem 0.5rem;font-family:var(--font-mono);font-size:0.82rem;color:var(--text3)">{{ ch.chapter_number }}</td>
+            <td style="padding:0.7rem 0.5rem"><a href="{{ url_for('read_chapter', novel_id=novel.id, chapter_id=ch.id) }}" style="color:var(--text)">{{ ch.title }}</a></td>
+            <td style="padding:0.7rem 0.5rem;text-align:center">
+              {% if ch.published %}<span class="badge badge-ongoing" style="font-size:0.7rem">Published</span>
+              {% else %}<span class="badge" style="background:var(--surface2);color:var(--text3);font-size:0.7rem;border:1px solid var(--border)">Draft</span>{% endif %}
+            </td>
+            <td style="padding:0.7rem 0.5rem;text-align:right;font-size:0.85rem;color:var(--text3)">{{ "{:,}".format(ch.views or 0) }}</td>
+            <td style="padding:0.7rem 0.5rem;text-align:right;font-size:0.85rem;color:var(--text3)">{{ ch.content|word_count if ch.content else 0 }}</td>
+            <td style="padding:0.7rem 0.5rem;text-align:right;font-size:0.8rem;color:var(--text3)">{{ ch.updated_at|time_ago }}</td>
+            <td style="padding:0.7rem 0.5rem;text-align:right">
+              <div style="display:flex;gap:0.4rem;justify-content:flex-end">
+                <a class="btn btn-ghost btn-sm" href="{{ url_for('edit_chapter', novel_id=novel.id, chapter_id=ch.id) }}">✏</a>
+                <form method="post" action="{{ url_for('delete_chapter', novel_id=novel.id, chapter_id=ch.id) }}" style="display:inline" onsubmit="return confirm('Delete this chapter?')">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                  <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--danger)">🗑</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-state-icon">📄</div>
+      <div class="empty-state-title">No chapters yet</div>
+      <a class="btn btn-primary" href="{{ url_for('new_chapter', novel_id=novel.id) }}" style="margin-top:1rem">Write First Chapter</a>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Analytics Tab -->
+  <div id="tab-analytics" style="display:none">
+    <div class="analytics-grid" style="margin-top:1rem">
+      <div class="stat-card">
+        <div class="stat-label">Total Views</div>
+        <div class="stat-value" id="stat-total-views">—</div>
+        <div class="stat-sub">all time</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Chapters</div>
+        <div class="stat-value">{{ chapters|length }}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Words</div>
+        <div class="stat-value">{{ "{:,}".format(total_words) }}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Avg Words/Chapter</div>
+        <div class="stat-value">{{ "{:,}".format((total_words // chapters|length) if chapters else 0) }}</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-top:1.5rem" class="analytics-charts-grid">
+      <div class="chart-container" style="grid-column:1/-1">
+        <div class="chart-title">Views (Last 30 Days)</div>
+        <canvas id="views-chart" height="80"></canvas>
+      </div>
+      <div class="chart-container">
+        <div class="chart-title">Views by Chapter</div>
+        <canvas id="chapter-chart" height="120"></canvas>
+      </div>
+      <div class="chart-container">
+        <div class="chart-title">Rating Distribution</div>
+        <canvas id="ratings-chart" height="120"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Word Count Tab -->
+  <div id="tab-words" style="display:none">
+    <div style="margin-top:1rem">
+      <div class="stat-card" style="margin-bottom:1.5rem;display:inline-block;min-width:200px">
+        <div class="stat-label">Total Words</div>
+        <div class="stat-value">{{ "{:,}".format(total_words) }}</div>
+        <div class="stat-sub">across {{ chapters|length }} chapters</div>
+      </div>
+      <div id="chapter-words-list" class="card"><div class="card-body" style="color:var(--text3)">Loading…</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  // Load analytics when tab clicked
+  const analyticsTab = document.querySelector('[data-tab="tab-analytics"]');
+  const wordsTab     = document.querySelector('[data-tab="tab-words"]');
+  let loaded = false;
+  function loadIfNeeded() {
+    if (!loaded) { loaded=true; loadAnalytics({{ novel.id }}); }
+  }
+  analyticsTab?.addEventListener('click', loadIfNeeded);
+  wordsTab?.addEventListener('click', loadIfNeeded);
+});
+
+// Fix grid for mobile
+if (window.innerWidth < 640) {
+  document.querySelector('.analytics-charts-grid')?.style && (document.querySelector('.analytics-charts-grid').style.gridTemplateColumns='1fr');
+}
+</script>
+{% endblock %}

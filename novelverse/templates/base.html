@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}NovelVerse{% endblock %} — NovelVerse</title>
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  {% block head %}{% endblock %}
+</head>
+<body>
+<!-- ── Navbar ── -->
+<nav class="navbar">
+  <div class="navbar-inner">
+    <a class="nav-brand" href="{{ url_for('home') }}">Novel<span>Verse</span></a>
+    <div class="nav-links">
+      <a class="nav-link {% if request.endpoint=='home' %}active{% endif %}" href="{{ url_for('home') }}">Home</a>
+      <a class="nav-link {% if request.endpoint=='browse' %}active{% endif %}" href="{{ url_for('browse') }}">Browse</a>
+      {% if session.user_id %}
+      <a class="nav-link {% if request.endpoint=='reading_list' %}active{% endif %}" href="{{ url_for('reading_list') }}">My List</a>
+      <a class="nav-link {% if 'author' in request.endpoint %}active{% endif %}" href="{{ url_for('author_dashboard') }}">Dashboard</a>
+      {% endif %}
+    </div>
+    <form class="nav-search" action="{{ url_for('search') }}" method="get">
+      <input type="text" name="q" placeholder="Search novels, authors…" value="{{ request.args.get('q','') }}">
+      <button type="submit">Search</button>
+    </form>
+    <div class="nav-actions">
+      {% if session.user_id %}
+      <div class="nav-dropdown">
+        <div class="nav-avatar">{{ session.username[0].upper() }}</div>
+        <div class="nav-dropdown-menu">
+          <a class="dropdown-item" href="{{ url_for('user_profile', username=session.username) }}">👤 Profile</a>
+          <a class="dropdown-item" href="{{ url_for('author_dashboard') }}">📚 Dashboard</a>
+          <a class="dropdown-item" href="{{ url_for('reading_list') }}">🔖 Reading List</a>
+          <a class="dropdown-item" href="{{ url_for('settings') }}">⚙ Settings</a>
+          <div class="dropdown-divider"></div>
+          <a class="dropdown-item" href="{{ url_for('logout') }}" style="color:var(--danger)!important">Sign Out</a>
+        </div>
+      </div>
+      {% else %}
+      <a class="btn btn-ghost btn-sm" href="{{ url_for('login') }}">Log In</a>
+      <a class="btn btn-primary btn-sm" href="{{ url_for('register') }}">Sign Up</a>
+      {% endif %}
+    </div>
+  </div>
+</nav>
+
+<!-- ── Flash Messages ── -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<div class="container flash-container" style="padding-top:0.75rem">
+  {% for cat, msg in messages %}
+  <div class="flash flash-{{ cat }}">{{ msg }}</div>
+  {% endfor %}
+</div>
+{% endif %}
+{% endwith %}
+
+<!-- ── Content ── -->
+{% block content %}{% endblock %}
+
+<!-- ── Footer ── -->
+<footer class="footer">
+  <div class="container footer-inner">
+    <div>
+      <div class="footer-brand">NovelVerse</div>
+      <div>The home for web fiction.</div>
+    </div>
+    <div class="footer-links">
+      <a class="footer-link" href="{{ url_for('browse') }}">Browse</a>
+      <a class="footer-link" href="{{ url_for('browse') }}?genre=Fantasy">Fantasy</a>
+      <a class="footer-link" href="{{ url_for('browse') }}?genre=Sci-Fi">Sci-Fi</a>
+      <a class="footer-link" href="{{ url_for('browse') }}?genre=Romance">Romance</a>
+    </div>
+    <div>© 2025 NovelVerse · Built with Flask</div>
+  </div>
+</footer>
+
+<div id="toast-container" class="toast-container"></div>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

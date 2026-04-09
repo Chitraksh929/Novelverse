@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}{% if chapter %}Edit Chapter{% else %}New Chapter{% endif %}{% endblock %}
+{% block content %}
+<div class="container" style="padding-top:2rem;padding-bottom:3rem">
+  <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem">
+    <a href="{{ url_for('manage_novel', novel_id=novel.id) }}" style="color:var(--text3)">‹ Back to {{ novel.title }}</a>
+  </div>
+  <h1 style="margin-bottom:1.5rem">{% if chapter %}Edit Chapter {{ chapter.chapter_number }}{% else %}New Chapter{% endif %}</h1>
+
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <div class="form-group">
+      <label class="form-label">Chapter Title</label>
+      <input type="text" name="title" class="form-control" required placeholder="Enter chapter title…" value="{{ chapter.title if chapter else '' }}">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Content <span id="word-count-live" style="color:var(--text3);font-weight:400;font-family:var(--font-mono);font-size:0.8rem;margin-left:0.5rem">0 words</span></label>
+      <div class="editor-toolbar">
+        <button type="button" class="editor-btn" onclick="wrapText('**','**')"><b>B</b></button>
+        <button type="button" class="editor-btn" onclick="wrapText('_','_')"><i>I</i></button>
+        <div class="editor-sep"></div>
+        <button type="button" class="editor-btn" onclick="insertParagraph()">¶</button>
+        <button type="button" class="editor-btn" title="Em dash" onclick="insertText('—')">—</button>
+        <button type="button" class="editor-btn" title="Ellipsis" onclick="insertText('…')">…</button>
+        <div class="editor-sep"></div>
+        <button type="button" class="editor-btn" onclick="wrapText('> ','')">Quote</button>
+        <button type="button" class="editor-btn" onclick="wrapText('*','*')">Scene Break</button>
+      </div>
+      <textarea id="chapter-content" name="content" class="editor-body" placeholder="Begin your chapter here…">{{ chapter.content if chapter else '' }}</textarea>
+      <input type="hidden" id="novel-context" value="{{ novel.description }}">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Author's Note <span style="font-weight:300;text-transform:none;font-size:0.8rem">(optional)</span></label>
+      <textarea name="author_note" class="form-control" rows="2" placeholder="Leave a note for your readers…">{{ chapter.author_note if chapter else '' }}</textarea>
+    </div>
+
+    <div class="form-group">
+      <label class="form-check">
+        <input type="checkbox" name="published" {% if not chapter or chapter.published %}checked{% endif %}>
+        <span>Publish this chapter (visible to readers)</span>
+      </label>
+    </div>
+
+    <div style="display:flex;gap:1rem">
+      <button type="submit" class="btn btn-primary">{% if chapter %}Save Changes{% else %}Publish Chapter{% endif %}</button>
+      <a href="{{ url_for('manage_novel', novel_id=novel.id) }}" class="btn btn-ghost">Cancel</a>
+    </div>
+  </form>
+
+  <!-- AI Writing Assistant -->
+  <div class="ai-panel" id="ai-panel">
+    <div class="ai-panel-title">✨ AI Writing Assistant</div>
+    <p style="font-size:0.85rem;color:var(--text3);margin-bottom:0.75rem">Use AI to help with your writing. Results are suggestions — always review before adding.</p>
+    <div class="ai-actions">
+      <button class="btn btn-secondary btn-sm" data-ai-action="continue">▶ Continue Story</button>
+      <button class="btn btn-secondary btn-sm" data-ai-action="improve">✏ Improve Prose</button>
+      <button class="btn btn-secondary btn-sm" data-ai-action="dialogue">💬 Enhance Dialogue</button>
+      <button class="btn btn-secondary btn-sm" data-ai-action="brainstorm">💡 Brainstorm Ideas</button>
+      <button class="btn btn-secondary btn-sm" data-ai-action="summarize">📝 Summarize Chapter</button>
+    </div>
+    <div id="ai-result" class="ai-result" style="display:none"></div>
+    <button id="ai-apply" class="btn btn-outline btn-sm" style="display:none;margin-top:0.5rem">+ Append to Chapter</button>
+  </div>
+</div>
+
+<script>
+function getTextarea() { return document.getElementById('chapter-content'); }
+function wrapText(before, after) {
+  const ta = getTextarea(); const start = ta.selectionStart, end = ta.selectionEnd;
+  const sel = ta.value.substring(start,end);
+  ta.value = ta.value.substring(0,start) + before + sel + after + ta.value.substring(end);
+  ta.focus(); updateWordCount();
+}
+function insertText(t) {
+  const ta = getTextarea(); const pos = ta.selectionStart;
+  ta.value = ta.value.substring(0,pos) + t + ta.value.substring(pos);
+  ta.selectionStart = ta.selectionEnd = pos + t.length; ta.focus();
+}
+function insertParagraph() {
+  const ta = getTextarea(); const pos = ta.selectionStart;
+  ta.value = ta.value.substring(0,pos) + '\n\n' + ta.value.substring(pos);
+  ta.selectionStart = ta.selectionEnd = pos + 2; ta.focus();
+}
+</script>
+{% endblock %}
