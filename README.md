@@ -1,4 +1,4 @@
-# Novelverse[README.md](https://github.com/user-attachments/files/26590923/README.md)
+[README.md](https://github.com/user-attachments/files/26590923/README.md)
 # NovelVerse 📚
 
 A full-featured web fiction platform built with Flask, SQLite, and Jinja2.
